@@ -37,7 +37,7 @@ public class App {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(s_CommandLineValues.NumThreads);
         LinkedList<ExtractFeaturesTask> tasks = new LinkedList<>();
         try {
-            Files.walk(Paths.get(s_CommandLineValues.Dir)).filter(Files::isRegularFile)
+            Files.walk(Paths.get(s_CommandLineValues.Dir), 1).filter(Files::isRegularFile)
                     .filter(p -> p.toString().toLowerCase().endsWith(".java")).forEach(f -> {
                 ExtractFeaturesTask task = new ExtractFeaturesTask(s_CommandLineValues, f);
                 tasks.add(task);
