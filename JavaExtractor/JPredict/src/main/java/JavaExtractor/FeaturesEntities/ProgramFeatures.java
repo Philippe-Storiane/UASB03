@@ -23,6 +23,9 @@ public class ProgramFeatures {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
+	int baseLineIndex = this.filePath.lastIndexOf('/') + 1;
+	String className = this.filePath.substring( baseLineIndex, this.filePath.length() - 5);
+	stringBuilder.append( className).append(" "); 
         stringBuilder.append(name).append(" ");
         stringBuilder.append(features.stream().map(ProgramRelation::toString).collect(Collectors.joining(" ")));
 
