@@ -27,14 +27,14 @@ def ExtractFeaturesForDir(args, dir, prefix):
                '--max_path_length', str(args.max_path_length), '--max_path_width', str(args.max_path_width),
                '--dir', dir, '--num_threads', str(args.num_threads)]
 
-    # print command
+    sys.stderr.write(str(command) + '\n')
     # os.system(command)
     kill = lambda process: process.kill()
     outputFileName = TMP_DIR + prefix + dir.split('/')[-1]
     failed = False
     with open(outputFileName, 'a') as outputFile:
         sleeper = subprocess.Popen(command, stdout=outputFile, stderr=subprocess.PIPE)
-        timer = Timer(60 * 60, kill, [sleeper])
+        timer = Timer(5 * 60, kill, [sleeper])
 
         try:
             timer.start()
@@ -48,9 +48,9 @@ def ExtractFeaturesForDir(args, dir, prefix):
         else:
             print('dir: ' + str(dir) + ' was not completed in time', file=sys.stderr)
             failed = True
-            subdirs = get_immediate_subdirectories(dir)
-            for subdir in subdirs:
-                ExtractFeaturesForDir(args, subdir, prefix + dir.split('/')[-1] + '_')
+        subdirs = get_immediate_subdirectories(dir)
+        for subdir in subdirs:
+             ExtractFeaturesForDir(args, subdir, prefix + dir.split('/')[-1] + '_')
     if failed:
         if os.path.exists(outputFileName):
             os.remove(outputFileName)
