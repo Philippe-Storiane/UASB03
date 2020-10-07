@@ -21,15 +21,15 @@
 #   recommended to use a multi-core machine for the preprocessing 
 #   step and set this value to the number of cores.
 # PYTHON - python3 interpreter alias.
-TRAIN_DIR=/home/philippe/code2seq/data/baselines/raw/android/train
-VAL_DIR=/home/philippe/code2seq/data/baselines/raw/android/val
-TEST_DIR=/home/philippe/code2seq/data/baselines/raw/android/test
+TRAIN_DIR=/home/philippe/code2seq/data/baselines/raw/sample/train
+VAL_DIR=/home/philippe/code2seq/data/baselines/raw/sample/val
+TEST_DIR=/home/philippe/code2seq/data/baselines/raw/sample/test
 DATASET_NAME=android
 MAX_DATA_CONTEXTS=1000
 MAX_CONTEXTS=200
 SUBTOKEN_VOCAB_SIZE=186277
 TARGET_VOCAB_SIZE=26347
-NUM_THREADS=2
+NUM_THREADS=64
 PYTHON=python3.6
 ###########################################################
 
