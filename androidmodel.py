@@ -13,7 +13,7 @@ import numpy as np
 import shutil
 import tensorflow as tf
 
-import reader
+import androidreader
 from common import Common
 from rouge import FilesRouge
 
@@ -79,7 +79,7 @@ class AndroidModel:
         best_f1_recall = 0
         epochs_no_improve = 0
 
-        self.queue_thread = reader.Reader(subtoken_to_index=self.subtoken_to_index,
+        self.queue_thread = androidreader.Reader(subtoken_to_index=self.subtoken_to_index,
                                           node_to_index=self.node_to_index,
                                           target_to_index=self.target_to_index,
                                           config=self.config)
@@ -153,14 +153,15 @@ class AndroidModel:
     def evaluate(self, release=False):
         eval_start_time = time.time()
         if self.eval_queue is None:
-            self.eval_queue = reader.Reader(subtoken_to_index=self.subtoken_to_index,
+            self.eval_queue = androidreader.Reader(subtoken_to_index=self.subtoken_to_index,
                                             node_to_index=self.node_to_index,
                                             target_to_index=self.target_to_index,
                                             config=self.config, is_evaluating=True)
             reader_output = self.eval_queue.get_output()
             self.eval_predicted_indices_op, self.eval_topk_values, _, _, self.method_embedding = \
                 self.build_test_graph(reader_output)
-            self.eval_true_target_strings_op = reader_output[reader.TARGET_STRING_KEY]
+            self.eval_true_target_strings_op = reader_output[androidreader.TARGET_STRING_KEY]
+            self.eval_tag_key_op = reader_output[ androidreader.TARGET_TAG_KEY]
             self.saver = tf.train.Saver(max_to_keep=10)
 
         if self.config.LOAD_PATH and not self.config.TRAIN_PATH:
@@ -175,13 +176,15 @@ class AndroidModel:
         model_dirname = os.path.dirname(self.config.SAVE_PATH if self.config.SAVE_PATH else self.config.LOAD_PATH)
         ref_file_name = model_dirname + '/ref.txt'
         predicted_file_name = model_dirname + '/pred.txt'
+        embedding_file_name = model_dirname + '/embedding.txt'
         if not os.path.exists(model_dirname):
             os.makedirs(model_dirname)
         
         # print("itern decoder size is " + str(self.config.DECODER_SIZE))
-        with open(model_dirname + '/log.txt', 'w') as output_file, open(ref_file_name, 'w') as ref_file, open(
-                predicted_file_name,
-                'w') as pred_file:
+        with open(model_dirname + '/log.txt', 'w') as output_file, \
+            open(ref_file_name, 'w') as ref_file, \
+            open( predicted_file_name, 'w') as pred_file, \
+            open( embedding_file_name, "w") as embedding_file:
             num_correct_predictions = 0 if self.config.BEAM_WIDTH == 0 \
                 else np.zeros([self.config.BEAM_WIDTH], dtype=np.int32)
             total_predictions = 0
@@ -192,10 +195,15 @@ class AndroidModel:
 
             try:
                 while True:
-                    predicted_indices, true_target_strings, top_values, method_embeddings = self.sess.run(
-                        [self.eval_predicted_indices_op, self.eval_true_target_strings_op, self.eval_topk_values, self.method_embedding],
+                    predicted_indices, true_target_strings, top_values, method_embeddings, tag= self.sess.run(
+                        [self.eval_predicted_indices_op, self.eval_true_target_strings_op, self.eval_topk_values, self.method_embedding, self.eval_tag_key_op],
                     )
-                    print( method_embeddings.shape )
+                    #print( tag.shape )
+                    #print( tag[0])
+#                    print( method_embeddings.shape )
+#                    print( "0,0 " +  str(method_embeddings[0,0]))
+#                    print( "MAX_LINE,MAX_COLUMN " + str(method_embeddings[ method_embeddings.shape[0] - 1 , method_embeddings.shape[1] - 1]))
+                    #print( true_target_strings )
                     true_target_strings = Common.binary_to_string_list(true_target_strings)
                     ref_file.write(
                         '\n'.join(
@@ -226,6 +234,12 @@ class AndroidModel:
                     if total_prediction_batches % self.num_batches_to_log == 0:
                         elapsed = time.time() - start_time
                         self.trace_evaluation(output_file, num_correct_predictions, total_predictions, elapsed)
+                    embedding_file.write(
+                        '\n'.join(
+                            [
+                                Common.binary_to_string( tag[ i ] ) + ',' +
+                                ','.join([ str( method_embeddings[ i, j]) for j in range(method_embeddings.shape[ 1 ])])
+                                    for i in range( method_embeddings.shape[0])]) + '\n')
             except tf.errors.OutOfRangeError:
                 pass
 
@@ -343,15 +357,15 @@ class AndroidModel:
         print(throughput_message)
 
     def build_training_graph(self, input_tensors):
-        target_index = input_tensors[reader.TARGET_INDEX_KEY]
-        target_lengths = input_tensors[reader.TARGET_LENGTH_KEY]
-        path_source_indices = input_tensors[reader.PATH_SOURCE_INDICES_KEY]
-        node_indices = input_tensors[reader.NODE_INDICES_KEY]
-        path_target_indices = input_tensors[reader.PATH_TARGET_INDICES_KEY]
-        valid_context_mask = input_tensors[reader.VALID_CONTEXT_MASK_KEY]
-        path_source_lengths = input_tensors[reader.PATH_SOURCE_LENGTHS_KEY]
-        path_lengths = input_tensors[reader.PATH_LENGTHS_KEY]
-        path_target_lengths = input_tensors[reader.PATH_TARGET_LENGTHS_KEY]
+        target_index = input_tensors[androidreader.TARGET_INDEX_KEY]
+        target_lengths = input_tensors[androidreader.TARGET_LENGTH_KEY]
+        path_source_indices = input_tensors[androidreader.PATH_SOURCE_INDICES_KEY]
+        node_indices = input_tensors[androidreader.NODE_INDICES_KEY]
+        path_target_indices = input_tensors[androidreader.PATH_TARGET_INDICES_KEY]
+        valid_context_mask = input_tensors[androidreader.VALID_CONTEXT_MASK_KEY]
+        path_source_lengths = input_tensors[androidreader.PATH_SOURCE_LENGTHS_KEY]
+        path_lengths = input_tensors[androidreader.PATH_LENGTHS_KEY]
+        path_target_lengths = input_tensors[androidreader.PATH_TARGET_LENGTHS_KEY]
 
         with tf.variable_scope('model'):
             subtoken_vocab = tf.get_variable('SUBTOKENS_VOCAB',
@@ -555,14 +569,14 @@ class AndroidModel:
         return batched_embed
 
     def build_test_graph(self, input_tensors):
-        target_index = input_tensors[reader.TARGET_INDEX_KEY]
-        path_source_indices = input_tensors[reader.PATH_SOURCE_INDICES_KEY]
-        node_indices = input_tensors[reader.NODE_INDICES_KEY]
-        path_target_indices = input_tensors[reader.PATH_TARGET_INDICES_KEY]
-        valid_mask = input_tensors[reader.VALID_CONTEXT_MASK_KEY]
-        path_source_lengths = input_tensors[reader.PATH_SOURCE_LENGTHS_KEY]
-        path_lengths = input_tensors[reader.PATH_LENGTHS_KEY]
-        path_target_lengths = input_tensors[reader.PATH_TARGET_LENGTHS_KEY]
+        target_index = input_tensors[androidreader.TARGET_INDEX_KEY]
+        path_source_indices = input_tensors[androidreader.PATH_SOURCE_INDICES_KEY]
+        node_indices = input_tensors[androidreader.NODE_INDICES_KEY]
+        path_target_indices = input_tensors[androidreader.PATH_TARGET_INDICES_KEY]
+        valid_mask = input_tensors[androidreader.VALID_CONTEXT_MASK_KEY]
+        path_source_lengths = input_tensors[androidreader.PATH_SOURCE_LENGTHS_KEY]
+        path_lengths = input_tensors[androidreader.PATH_LENGTHS_KEY]
+        path_target_lengths = input_tensors[androidreader.PATH_TARGET_LENGTHS_KEY]
 
         with tf.variable_scope('model', reuse=self.get_should_reuse_variables()):
             subtoken_vocab = tf.get_variable('SUBTOKENS_VOCAB',
@@ -603,7 +617,7 @@ class AndroidModel:
 
     def predict(self, predict_data_lines):
         if self.predict_queue is None:
-            self.predict_queue = reader.Reader(subtoken_to_index=self.subtoken_to_index,
+            self.predict_queue = androidreader.Reader(subtoken_to_index=self.subtoken_to_index,
                                                node_to_index=self.node_to_index,
                                                target_to_index=self.target_to_index,
                                                config=self.config, is_evaluating=True)
@@ -612,10 +626,10 @@ class AndroidModel:
             reader_output = {key: tf.expand_dims(tensor, 0) for key, tensor in reader_output.items()}
             self.predict_top_indices_op, self.predict_top_scores_op, _, self.attention_weights_op = \
                 self.build_test_graph(reader_output)
-            self.predict_source_string = reader_output[reader.PATH_SOURCE_STRINGS_KEY]
-            self.predict_path_string = reader_output[reader.PATH_STRINGS_KEY]
-            self.predict_path_target_string = reader_output[reader.PATH_TARGET_STRINGS_KEY]
-            self.predict_target_strings_op = reader_output[reader.TARGET_STRING_KEY]
+            self.predict_source_string = reader_output[androidreader.PATH_SOURCE_STRINGS_KEY]
+            self.predict_path_string = reader_output[androidreader.PATH_STRINGS_KEY]
+            self.predict_path_target_string = reader_output[androidreader.PATH_TARGET_STRINGS_KEY]
+            self.predict_target_strings_op = reader_output[androidreader.TARGET_STRING_KEY]
 
             self.initialize_session_variables(self.sess)
             self.saver = tf.train.Saver()
