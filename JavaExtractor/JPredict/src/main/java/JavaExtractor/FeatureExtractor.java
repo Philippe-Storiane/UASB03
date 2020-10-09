@@ -4,6 +4,7 @@ import JavaExtractor.Common.CommandLineValues;
 import JavaExtractor.Common.Common;
 import JavaExtractor.Common.MethodContent;
 import JavaExtractor.FeaturesEntities.ProgramFeatures;
+import JavaExtractor.FeaturesEntities.ProgramTextFeatures;
 import JavaExtractor.FeaturesEntities.Property;
 import JavaExtractor.Visitors.FunctionVisitor;
 import com.github.javaparser.JavaParser;
@@ -56,6 +57,17 @@ class FeatureExtractor {
         return generatePathFeatures(methods);
     }
 
+    public ArrayList<ProgramTextFeatures> extractTextFeatures(String code) {
+        CompilationUnit m_CompilationUnit = parseFileWithRetries(code);
+        FunctionVisitor functionVisitor = new FunctionVisitor(m_CommandLineValues);
+
+        functionVisitor.visit(m_CompilationUnit, null);
+
+        ArrayList<MethodContent> methods = functionVisitor.getMethodContents();
+
+        return generateTextFeatures(methods);
+    }
+
     private CompilationUnit parseFileWithRetries(String code) {
         final String classPrefix = "public class Test {";
         final String classSuffix = "}";
@@ -92,6 +104,17 @@ class FeatureExtractor {
         return methodsFeatures;
     }
 
+    private ArrayList<ProgramTextFeatures> generateTextFeatures(ArrayList<MethodContent> methods) {
+        ArrayList<ProgramTextFeatures> methodsFeatures = new ArrayList<>();
+        for (MethodContent content : methods) {
+            ProgramTextFeatures singleMethodFeatures = generateTextFeaturesForFunction(content);
+            if (!singleMethodFeatures.isEmpty()) {
+                methodsFeatures.add(singleMethodFeatures);
+            }
+        }
+        return methodsFeatures;
+    }
+
     private ProgramFeatures generatePathFeaturesForFunction(MethodContent methodContent) {
         ArrayList<Node> functionLeaves = methodContent.getLeaves();
         ProgramFeatures programFeatures = new ProgramFeatures(
@@ -110,6 +133,18 @@ class FeatureExtractor {
             }
         }
         return programFeatures;
+    }
+
+    private ProgramTextFeatures generateTextFeaturesForFunction(MethodContent methodContent) {
+        ArrayList<Node> functionLeaves = methodContent.getLeaves();
+        ProgramTextFeatures programTextFeatures = new ProgramTextFeatures(
+                methodContent.getName(), this.filePath);
+
+        for (int i = 0; i < functionLeaves.size(); i++) {
+        	Property property = functionLeaves.get(i).getUserData(Common.PropertyKey);
+                programTextFeatures.addFeature(property);
+        }
+        return programTextFeatures;
     }
 
     private String generatePath(Node source, Node target, String separator) {
