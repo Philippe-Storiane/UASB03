@@ -23,15 +23,17 @@ public class ProgramTextFeatures {
         StringBuilder stringBuilder = new StringBuilder();
 	int baseLineIndex = this.filePath.lastIndexOf('/') + 1;
 	String className = this.filePath.substring( baseLineIndex, this.filePath.length() - 5);
+	String methodName = name.replace("|", " ");
+	String methodText = text.toString().replaceAll("METHOD_NAME", methodName);
 	stringBuilder.append( className).append(" "); 
         stringBuilder.append(name).append(" ");
-        stringBuilder.append( text );
+        stringBuilder.append( methodText );
 
         return stringBuilder.toString();
     }
 
     public void addFeature(Property property) {
-        text.append(" " ).append( property.getName());
+        text.append(" " ).append( property.getName().replace("|", " "));
     }
 
     public boolean isEmpty() {
