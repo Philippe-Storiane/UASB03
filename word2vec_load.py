@@ -9,7 +9,7 @@ import spacy
 import datetime
 #import gensim
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_sm", disable=['parser', 'ner'])
 
 raw_text_filename="text-embedding"
 word2vec_model = ""
@@ -38,7 +38,7 @@ t1 = datetime.datetime.now()
 for method_feature in method_features:
 #    first_space = method_feature.find(" ")
 #    second_space = method_feature.find(" ", first_space + 1)
- #   methods_words = nlp( method_feature[ second_space + 1: -1])
+#    methods_words = nlp( method_feature[ second_space + 1: -1])
     data = method_feature.split()
     method_words = nlp( " ".join(data[2:])) 
     i = i  + 1   
