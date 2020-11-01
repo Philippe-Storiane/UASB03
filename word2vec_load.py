@@ -11,7 +11,7 @@ import datetime
 #import gensim
 
 import spacy.lang.en.stop_words as st
-st.STOP_WORDS |= {"[", "]", "(", ")", "%", "+", "<", ">", ":", "*", "/", "//", "=", "void", "int", "override", "char", "long", "float", "string", "short", "boolean", "exception", "--", "null", "main"}
+st.STOP_WORDS |= {"[", "]", "(", ")", "%", "+", "<", ">", ":", "*", "/", "//", "=", "void", "int", "override", "char", "long", "float", "string", "short", "boolean", "exception", "--", "null", "true", "false","main", "test", "assert", "equal", "set"}
 nlp = spacy.load("en_core_web_sm", disable=['parser', 'ner'])
 # NUM and BNANK to be explictily added as stop_word
 nlp.vocab['BLANK'].is_stop = True
@@ -90,7 +90,7 @@ to_remove = [
         'SYM' #yes
 #        'X'
     ]        
-part_of_speech( text, [ 'ADP', 'ADV','CCONJ', 'DET','INTJ', 'NUM', 'PART','PRON', 'PROPN', 'SYM', 'X'])
+# part_of_speech( text, [ 'ADP', 'ADV','CCONJ', 'DET','INTJ', 'NUM', 'PART','PRON', 'PROPN', 'SYM', 'X'])
 
 
 def text_process( text, result_file ):
