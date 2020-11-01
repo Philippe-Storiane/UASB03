@@ -11,7 +11,7 @@ import datetime
 #import gensim
 
 import spacy.lang.en.stop_words as st
-st.STOP_WORDS |= {"[", "]", "(", ")", "%", "+", "<", ">", ":", "*", "/", "//", "=", "void", "int", "override", "char", "long", "float", "string", "short", "boolean", "exception", "--"}
+st.STOP_WORDS |= {"[", "]", "(", ")", "%", "+", "<", ">", ":", "*", "/", "//", "=", "void", "int", "override", "char", "long", "float", "string", "short", "boolean", "exception", "--", "null", "main"}
 nlp = spacy.load("en_core_web_sm", disable=['parser', 'ner'])
 # NUM and BNANK to be explictily added as stop_word
 nlp.vocab['BLANK'].is_stop = True
