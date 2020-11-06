@@ -8,7 +8,8 @@ Created on Thu Oct 15 03:49:57 2020
 import json
 import spacy
 import datetime
-#import gensim
+from gensim.models import KeyedVectors
+from gensim.corpora import Dictionary
 
 import spacy.lang.en.stop_words as st
 st.STOP_WORDS |= {"[", "]", "(", ")", "%", "+", "<", ">", ":", "*", "/", "//", "=", "void", "int", "override", "char", "long", "float", "string", "short", "boolean", "exception", "--", "null", "true", "false","main", "test", "assert", "equal", "set"}
@@ -115,6 +116,17 @@ def text_process( text, result_file ):
     result.close()
     t2 = datetime.datetime.now()
     print( t2 - t1 )
-        
-        
+
+filtered_text_name = "filtered-text-embedding"
+model = KeyedVectors.load_word2vec_format("../models/word2vec/enwiki_upos_skipgram_300_3_2017/model.bin", binary = True)
+
+filtered_text_file = open( filtered_text_name )
+filtered_text = filtered_text_file.readlines()
+filtered_text_file.close()
+filtered_corpus = list(map( lambda line: line.strip().split(" ")[1:], filtered_text))
+
+android_dict = Dictionary( filtered_corpus)
+
+
+
 
