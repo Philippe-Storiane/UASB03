@@ -126,6 +126,20 @@ filtered_text_file.close()
 filtered_corpus = list(map( lambda line: line.strip().split(" ")[1:], filtered_text))
 
 android_dict = Dictionary( filtered_corpus)
+android_dict.filter_extremes()
+android_dict.compactify()
+
+#unknown_words = {}
+#for word in android_dict.token2id.keys():
+#    if word not in model.vocab:
+#        word_id = android_dict.token2id[ word]
+#        unknown_words[ word ] = android_dict.dfs[ word_id ]
+unknown_words = []
+for word in android_dict.token2id.keys():
+    if word not in model.vocab:
+        unknown_words.append( word )
+
+
 
 
 
